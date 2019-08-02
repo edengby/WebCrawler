@@ -3,26 +3,24 @@ package WebCrawler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import javax.net.ssl.HttpsURLConnection;
 
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 public class Fetcher implements Runnable{
 
     static Logger logger = LogManager.getLogger(Fetcher.class);
 
-    final String LINK_REGEX = "<a href=\"https:\\/\\/([^\"]+)\">";
-    final String TITLE_REGEX = ".*?<title>(.*?)</title>.*?";
-    final String LINK_PREFIX = "https://";
     final String USER_AGENT = "User-Agent";
     final String USER_AGENT_VALUE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.87 Safari/537.36";
 
@@ -56,8 +54,9 @@ public class Fetcher implements Runnable{
                     String HTMLContent = getHTMLContent(scanner);
 
                     if(StringUtils.isNotEmpty(HTMLContent)) {
-                        extractTitle(HTMLContent);
-                        extractURL(HTMLContent);
+                        Document document = Jsoup.parse(HTMLContent);
+                        extractTitle(document);
+                        extractURL(document);
                         addURLsToQueue();
                     }
                 }
@@ -100,30 +99,25 @@ public class Fetcher implements Runnable{
     }
 
 
-    private void extractURL(String htmlContent) {
-        Pattern pattern = Pattern.compile(LINK_REGEX);
-        Matcher matcher = pattern.matcher(htmlContent);
-        try {
-            while (matcher.find()) {
-                for(int i = 0; i<=matcher.groupCount() ; i++) {
-                    String link = matcher.group(1);
-                    _extractedURL.add(LINK_PREFIX+link);
-                }
+    private void extractURL(Document htmlContent) {
+        Elements htmlElement = htmlContent.select("a[href*=http]");
+        for(Element element : htmlElement) {
+            String attr = element.attr("abs:href");
+            if(StringUtils.isNotEmpty(attr)) {
+                _extractedURL.add(attr);
             }
-        } catch (Exception e) {
-            logger.error("failed to extract url {}", e);
         }
 
     }
 
-    private void extractTitle(String htmlContent) {
-        Pattern pattern = Pattern.compile(TITLE_REGEX);
-        Matcher matcher = pattern.matcher(htmlContent);
-        while (matcher.find()) {
-            if(matcher.groupCount() > 0) {
-                String title = matcher.group(1);
-                System.out.println("Page title: "+title);
-                return;
+    private void extractTitle(Document htmlDocument) {
+        Elements select = htmlDocument.select("title");
+        if(select.size() > 0) {
+            Element element = select.get(0);
+            if (element != null) {
+                String cleanedTitle = element.text().replace("<title>", "")
+                        .replace("</title>", "");
+                System.out.println("Page title: " + cleanedTitle);
             }
         }
 
@@ -145,7 +139,7 @@ public class Fetcher implements Runnable{
                 InputStream inputStream = connection.getInputStream();
 
                 if (inputStream != null) {
-                    scanner = new Scanner(inputStream);
+                    scanner = new Scanner(inputStream, "UTF-8");
                 }
             }
         } catch (IOException e) {
@@ -159,12 +153,12 @@ public class Fetcher implements Runnable{
         URLConnection connection = null;
 
         try {
-            connection =  new URL(_URLToFetch).openConnection();
+            connection = new URL(_URLToFetch).openConnection();
             connection.setConnectTimeout(CONNECTION_TIMEOUT);
             connection.setReadTimeout(READ_TIMEOUT);
             connection.setRequestProperty(USER_AGENT,USER_AGENT_VALUE);
 
-            return checkConnectionErrors(connection);
+            return checkConnectionErrors((HttpURLConnection)connection);
 
         }catch ( Exception e ) {
             logger.error("Unable to create connection to URL: {} {}", _URLToFetch, e);
@@ -173,8 +167,8 @@ public class Fetcher implements Runnable{
 
     }
 
-    private URLConnection checkConnectionErrors(URLConnection connection) throws IOException {
-        int responseCode = ((HttpsURLConnection)connection).getResponseCode();
+    private URLConnection checkConnectionErrors(HttpURLConnection connection) throws IOException {
+        int responseCode = connection.getResponseCode();
         switch (responseCode) {
             case HttpURLConnection.HTTP_OK:
                 return connection;
