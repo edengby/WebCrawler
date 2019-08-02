@@ -23,6 +23,13 @@ public class Fetcher implements Runnable{
 
     final String USER_AGENT = "User-Agent";
     final String USER_AGENT_VALUE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.87 Safari/537.36";
+    final String HREF_TAG = "a[href*=http]";
+    final String HREF_ELEMENT = "abs:href";
+    final String TITLE = "title";
+    final String TITLE_TAG = "<title>";
+    final String TITLE_END_TAG = "</title>";
+    final String PAGE_TITLE_LABEL = "Page title: ";
+    final String UTF8 = "UTF-8";
 
     final int CONNECTION_TIMEOUT = 5000;
     final int READ_TIMEOUT = 5000;
@@ -100,9 +107,16 @@ public class Fetcher implements Runnable{
 
 
     private void extractURL(Document htmlContent) {
-        Elements htmlElement = htmlContent.select("a[href*=http]");
+        Elements htmlElement = htmlContent.select(HREF_TAG);
         for(Element element : htmlElement) {
-            String attr = element.attr("abs:href");
+            String attr = null;
+
+            try {
+                attr = element.attr(HREF_ELEMENT);
+            } catch (Exception e) {
+                logger.error("malformed URL exception {}, {}", _URLToFetch, e);
+            }
+
             if(StringUtils.isNotEmpty(attr)) {
                 _extractedURL.add(attr);
             }
@@ -111,13 +125,13 @@ public class Fetcher implements Runnable{
     }
 
     private void extractTitle(Document htmlDocument) {
-        Elements select = htmlDocument.select("title");
+        Elements select = htmlDocument.select(TITLE);
         if(select.size() > 0) {
             Element element = select.get(0);
             if (element != null) {
-                String cleanedTitle = element.text().replace("<title>", "")
-                        .replace("</title>", "");
-                System.out.println("Page title: " + cleanedTitle);
+                String cleanedTitle = element.text().replace(TITLE_TAG, "")
+                        .replace(TITLE_END_TAG, "");
+                System.out.println(PAGE_TITLE_LABEL + cleanedTitle);
             }
         }
 
@@ -139,7 +153,7 @@ public class Fetcher implements Runnable{
                 InputStream inputStream = connection.getInputStream();
 
                 if (inputStream != null) {
-                    scanner = new Scanner(inputStream, "UTF-8");
+                    scanner = new Scanner(inputStream, UTF8);
                 }
             }
         } catch (IOException e) {

@@ -86,7 +86,7 @@ public class CrawlerManager implements Runnable{
 
     public boolean reachedPageLimit() {
         if(_pageLimit.getCount() == 0){
-            logger.info("page limit is reached, application will be terminate");
+            logger.debug("page limit is reached, application will be terminate");
             return true;
         }
 
@@ -101,7 +101,9 @@ public class CrawlerManager implements Runnable{
     public void addURL(String url) {
         _URLVisited.put(url, true);
         try {
-            _URLQueue.add(url);
+            if(!reachedPageLimit()) {
+                _URLQueue.add(url);
+            }
         } catch (Exception e) {
             logger.error("unable to add items to URLQueue {}",e);
         }
