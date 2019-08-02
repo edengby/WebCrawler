@@ -17,7 +17,7 @@ Maven - Dependency Management
 
 ### **Author:**
 
-Eden Gabai
+Eden Gabay
 
 ### **License:**
 
