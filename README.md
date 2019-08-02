@@ -1,6 +1,6 @@
 # **WebCrawler**
 
-## Simple Java WebCrawler
+## Java Multi-Threaded WebCrawler
 
 ### **Getting Started:**
 
