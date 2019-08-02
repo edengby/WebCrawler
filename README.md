@@ -8,8 +8,8 @@ On windows environment run the run.bat file.
 
 Otherwise run: 
 
-java -jar -Dthreads=**NUMBER-OF-THREADS** -DbaseURL=**BASE-LINK** -Dlimit=**PAGE-LIMIT** 
--Dlog4j.configurationFile=log4j.xml WebCrawler-0.1-edeng.jar
+* * java -jar -Dthreads=**NUMBER-OF-THREADS** -DbaseURL=**BASE-LINK** -Dlimit=**PAGE-LIMIT** 
+-Dlog4j.configurationFile=log4j.xml WebCrawler-0.1-edeng.jar * * 
 
 ### **Built With:**
 
