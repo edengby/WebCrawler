@@ -1,0 +1,1 @@
+java -jar -Dthreads=10 -DbaseURL=https://google.com -Dlimit=100 -Dlog4j.configurationFile=log4j.xml WebCrawler-0.1-edeng.jar
